@@ -1,4 +1,12 @@
-import { Image, StyleSheet, Platform, View, Text, Button } from "react-native";
+import {
+  Image,
+  StyleSheet,
+  Platform,
+  View,
+  Text,
+  Button,
+  ScrollView,
+} from "react-native";
 
 import ParallaxScrollView from "@/components/ParallaxScrollView";
 import { ThemedText } from "@/components/ThemedText";
@@ -59,39 +67,78 @@ export default function HomeScreen() {
   }
 
   return (
-    <View>
-      <View style={styles.title}>
-        <Text>Order Management</Text>
+    <ScrollView>
+      <View style={styles.titleContainer}>
+        <Text style={styles.title}>Order Management</Text>
       </View>
       <View style={styles.stepContainer}>
+        <View style={styles.tableHeader}>
+          <Text style={[styles.tableHeaderText, styles.columnCustomerName]}>
+            Customer Name
+          </Text>
+          <Text style={[styles.tableHeaderText, styles.columnAddress]}>
+            Address
+          </Text>
+          <Text style={[styles.tableHeaderText, styles.columnStatus]}>
+            Status
+          </Text>
+        </View>
         {orders.map((order: any) => (
           <View key={order.id} style={styles.orderRow}>
-            <Text>Order ID: {order.id}</Text>
-
-            <Button title="Save" onPress={() => handleSave(order.id)} />
+            <Text
+              style={styles.columnCustomerName}
+            >{`${order.billing.first_name} ${order.billing.last_name}`}</Text>
+            <Text
+              style={styles.columnAddress}
+            >{`${order.billing.address_1}, ${order.billing.city}, ${order.billing.state}, ${order.billing.postcode}, ${order.billing.country}`}</Text>
+            <Text style={styles.columnStatus}>{order.status}</Text>
           </View>
         ))}
       </View>
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  title: {
-    textAlign: "center",
-  },
   titleContainer: {
-    // flexDirection: "row",
-    // alignItems: "center",
-    // gap: 8,
+    alignItems: "center",
+    margin: 30,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: "bold",
   },
   stepContainer: {
     marginBottom: 20,
+    marginHorizontal: 16,
+  },
+  tableHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 10,
+    paddingHorizontal: 10,
+  },
+  tableHeaderText: {
+    fontWeight: "bold",
+    textAlign: "center",
   },
   orderRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     marginBottom: 10,
+    paddingHorizontal: 10,
+  },
+  columnCustomerName: {
+    width: 120,
+    textAlign: "center",
+  },
+  columnAddress: {
+    width: 200,
+    textAlign: "center",
+  },
+  columnStatus: {
+    width: 100,
+    textAlign: "center",
   },
 });
