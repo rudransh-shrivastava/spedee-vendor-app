@@ -160,7 +160,6 @@ export default function HomeScreen() {
 
       {selectedOrder && (
         <Modal
-          animationType="slide"
           transparent={true}
           visible={modalVisible}
           onRequestClose={closeModal}
@@ -178,6 +177,30 @@ export default function HomeScreen() {
               >{`${selectedOrder.billing.address_1}, ${selectedOrder.billing.city}, ${selectedOrder.billing.state}, ${selectedOrder.billing.postcode}, ${selectedOrder.billing.country}`}</Text>
               <Text style={styles.modalLabel}>Order Status:</Text>
               <Text style={styles.modalValue}>{selectedOrder.status}</Text>
+
+              <Text style={styles.modalLabel}>Items:</Text>
+              {selectedOrder.line_items.map((item: any) => (
+                <View key={item.id} style={styles.itemRow}>
+                  <Image
+                    source={{ uri: item.image }}
+                    style={styles.itemImage}
+                  />
+                  <View style={styles.itemDetails}>
+                    <View style={styles.itemDetailRow}>
+                      <Text style={styles.itemLabel}>Name: </Text>
+                      <Text style={styles.itemName}>{item.name}</Text>
+                    </View>
+                    <View style={styles.itemDetailRow}>
+                      <Text style={styles.itemLabel}>Quantity: </Text>
+                      <Text style={styles.itemQuantity}>x{item.quantity}</Text>
+                    </View>
+                    <View style={styles.itemDetailRow}>
+                      <Text style={styles.itemLabel}>Total: </Text>
+                      <Text style={styles.itemTotal}>{item.total}</Text>
+                    </View>
+                  </View>
+                </View>
+              ))}
               <Text style={styles.modalLabel}>Order Total:</Text>
               <Text style={styles.modalValue}>{selectedOrder.total}</Text>
               <Button title="Close" onPress={closeModal} />
@@ -261,5 +284,37 @@ const styles = StyleSheet.create({
   modalValue: {
     fontSize: 16,
     marginBottom: 10,
+  },
+  itemRow: {
+    flexDirection: "row",
+    marginBottom: 10,
+  },
+  itemImage: {
+    width: 50,
+    height: 50,
+    marginRight: 10,
+  },
+  itemDetails: {
+    flex: 1,
+    justifyContent: "space-between",
+  },
+  itemDetailRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  itemLabel: {
+    fontWeight: "bold",
+  },
+  itemName: {
+    flex: 1,
+    textAlign: "left",
+  },
+  itemQuantity: {
+    flex: 1,
+    textAlign: "left",
+  },
+  itemTotal: {
+    flex: 1,
+    textAlign: "left",
   },
 });
