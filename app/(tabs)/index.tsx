@@ -15,6 +15,7 @@ import {
 import { WordPress } from "../../lib/WordPress";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import LoginForm from "@/components/LoginForm";
+import { showNotification } from "../../lib/PushNotificationConfig";
 
 export default function HomeScreen() {
   const [isLoggedIn, setIsLoggedIn] = React.useState(false);
@@ -33,6 +34,7 @@ export default function HomeScreen() {
   }
 
   interface Order {
+    line_items: any;
     id: number;
     billing: BillingInfo;
     status: string;
@@ -56,28 +58,40 @@ export default function HomeScreen() {
 
   useEffect(() => {
     const loadOrders = async () => {
+      console.log("loading orders");
       const storedOrders = await AsyncStorage.getItem("orders");
-      if (storedOrders) {
+      if (storedOrders?.length) {
+        console.log(storedOrders);
         setOrders(JSON.parse(storedOrders));
       }
     };
-
     const updateOrders = async () => {
       const email = await AsyncStorage.getItem("vendorEmail");
       const password = await AsyncStorage.getItem("vendorPassword");
       if (email && password) {
         const newOrders = await fetchOrders(email, password);
+        if (newOrders && newOrders.length > 0) {
+          if (orders.length === 0) {
+            // Initial load, just set the orders without notification
+            setOrders(newOrders);
+          } else if (newOrders.length > orders.length) {
+            showNotification("New Order", "You have a new order!");
+            console.log("new ORDER YOo", newOrders.length, orders.length);
+            setOrders(newOrders);
+          }
+          await AsyncStorage.setItem("orders", JSON.stringify(newOrders));
+        }
         setOrders(newOrders);
         await AsyncStorage.setItem("orders", JSON.stringify(newOrders));
       }
     };
 
-    loadOrders();
-    updateOrders(); // Fetch orders immediately
-    const intervalId = setInterval(updateOrders, 10000); // Fetch every 10 seconds
+    // loadOrders();
+
+    const intervalId = setInterval(updateOrders, 5000); // Fetch every 10 seconds
 
     return () => clearInterval(intervalId); // Cleanup on unmount
-  }, []);
+  }, [orders]);
 
   const fetchOrders = async (email: any, password: any) => {
     const wpConfig = {
@@ -87,7 +101,7 @@ export default function HomeScreen() {
     };
     const wp = new WordPress(wpConfig);
     const fetchedOrders = await wp.getOrders();
-    console.log(fetchedOrders);
+    console.log("fetched orders", fetchedOrders);
     return fetchedOrders;
   };
 
