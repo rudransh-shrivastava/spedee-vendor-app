@@ -1,13 +1,17 @@
+import React, { useEffect, useState } from "react";
 import {
+  Image,
   StyleSheet,
+  Platform,
   View,
   Text,
+  Button,
   ScrollView,
   Pressable,
   ActivityIndicator,
+  Modal,
+  TouchableOpacity,
 } from "react-native";
-import { Link } from "expo-router";
-import React, { useEffect, useState } from "react";
 import { WordPress } from "../../lib/WordPress";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import LoginForm from "@/components/LoginForm";
@@ -17,6 +21,25 @@ export default function HomeScreen() {
   const [orders, setOrders] = useState([]);
   const [orderStatus, setOrderStatus] = useState({});
   const [isLoading, setIsLoading] = useState(true);
+  const [modalVisible, setModalVisible] = useState(false);
+  interface BillingInfo {
+    first_name: string;
+    last_name: string;
+    address_1: string;
+    city: string;
+    state: string;
+    postcode: string;
+    country: string;
+  }
+
+  interface Order {
+    id: number;
+    billing: BillingInfo;
+    status: string;
+    total: string;
+  }
+
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
   useEffect(() => {
     const checkCredentials = async () => {
@@ -50,7 +73,7 @@ export default function HomeScreen() {
     };
 
     loadOrders();
-
+    updateOrders(); // Fetch orders immediately
     const intervalId = setInterval(updateOrders, 10000); // Fetch every 10 seconds
 
     return () => clearInterval(intervalId); // Cleanup on unmount
@@ -74,11 +97,22 @@ export default function HomeScreen() {
       [orderId]: status,
     }));
   };
+
   const handleLoginSuccess = () => {
     setIsLoggedIn(true);
   };
 
   const handleSave = async (orderId: any) => {};
+
+  const openModal = (order: any) => {
+    setSelectedOrder(order);
+    setModalVisible(true);
+  };
+
+  const closeModal = () => {
+    setModalVisible(false);
+    setSelectedOrder(null);
+  };
 
   if (isLoading) {
     return (
@@ -110,21 +144,47 @@ export default function HomeScreen() {
           </Text>
         </View>
         {orders.map((order: any) => (
-          <Link href="/order" asChild key={order.id}>
-            <Pressable>
-              <View style={styles.orderRow}>
-                <Text
-                  style={styles.columnCustomerName}
-                >{`${order.billing.first_name} ${order.billing.last_name}`}</Text>
-                <Text
-                  style={styles.columnAddress}
-                >{`${order.billing.address_1}, ${order.billing.city}, ${order.billing.state}, ${order.billing.postcode}, ${order.billing.country}`}</Text>
-                <Text style={styles.columnStatus}>{order.status}</Text>
-              </View>
-            </Pressable>
-          </Link>
+          <TouchableOpacity key={order.id} onPress={() => openModal(order)}>
+            <View style={styles.orderRow}>
+              <Text
+                style={styles.columnCustomerName}
+              >{`${order.billing.first_name} ${order.billing.last_name}`}</Text>
+              <Text
+                style={styles.columnAddress}
+              >{`${order.billing.address_1}, ${order.billing.city}, ${order.billing.state}, ${order.billing.postcode}, ${order.billing.country}`}</Text>
+              <Text style={styles.columnStatus}>{order.status}</Text>
+            </View>
+          </TouchableOpacity>
         ))}
       </View>
+
+      {selectedOrder && (
+        <Modal
+          animationType="slide"
+          transparent={true}
+          visible={modalVisible}
+          onRequestClose={closeModal}
+        >
+          <View style={styles.modalContainer}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Order Details</Text>
+              <Text style={styles.modalLabel}>Customer Name:</Text>
+              <Text
+                style={styles.modalValue}
+              >{`${selectedOrder.billing.first_name} ${selectedOrder.billing.last_name}`}</Text>
+              <Text style={styles.modalLabel}>Address:</Text>
+              <Text
+                style={styles.modalValue}
+              >{`${selectedOrder.billing.address_1}, ${selectedOrder.billing.city}, ${selectedOrder.billing.state}, ${selectedOrder.billing.postcode}, ${selectedOrder.billing.country}`}</Text>
+              <Text style={styles.modalLabel}>Order Status:</Text>
+              <Text style={styles.modalValue}>{selectedOrder.status}</Text>
+              <Text style={styles.modalLabel}>Order Total:</Text>
+              <Text style={styles.modalValue}>{selectedOrder.total}</Text>
+              <Button title="Close" onPress={closeModal} />
+            </View>
+          </View>
+        </Modal>
+      )}
     </ScrollView>
   );
 }
@@ -175,5 +235,31 @@ const styles = StyleSheet.create({
   columnStatus: {
     width: 100,
     textAlign: "center",
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.5)",
+  },
+  modalContent: {
+    width: 300,
+    padding: 20,
+    backgroundColor: "white",
+    borderRadius: 10,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    marginBottom: 10,
+  },
+  modalLabel: {
+    fontWeight: "bold",
+    fontSize: 16,
+    marginBottom: 4,
+  },
+  modalValue: {
+    fontSize: 16,
+    marginBottom: 10,
   },
 });
