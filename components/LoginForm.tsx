@@ -1,16 +1,16 @@
-import React, { useState } from "react";
-import { View, TextInput, Button, StyleSheet, Text } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { WordPress } from "@/lib/WordPress";
+import React, {useState} from 'react';
+import {View, TextInput, Button, StyleSheet, Text} from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import {WordPress} from '../lib/WordPress';
 
-const LoginForm = ({ onLoginSuccess }: { onLoginSuccess: () => void }) => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+const LoginForm = ({onLoginSuccess}: {onLoginSuccess: () => void}) => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
 
   const handleLogin = async () => {
     const wpConfig = {
-      url: "https://spedee.com",
+      url: 'https://spedee.com',
       username: email,
       password: password,
     };
@@ -18,11 +18,11 @@ const LoginForm = ({ onLoginSuccess }: { onLoginSuccess: () => void }) => {
 
     const isValid = await wp.validateCredentials();
     if (isValid) {
-      await AsyncStorage.setItem("vendorEmail", email);
-      await AsyncStorage.setItem("vendorPassword", password);
+      await AsyncStorage.setItem('vendorEmail', email);
+      await AsyncStorage.setItem('vendorPassword', password);
       onLoginSuccess();
     } else {
-      setError("Invalid credentials. Please try again.");
+      setError('Invalid credentials. Please try again.');
     }
   };
 
@@ -52,13 +52,13 @@ const styles = StyleSheet.create({
   },
   input: {
     height: 40,
-    borderColor: "gray",
+    borderColor: 'gray',
     borderWidth: 1,
     marginBottom: 10,
     padding: 10,
   },
   error: {
-    color: "red",
+    color: 'red',
     marginBottom: 10,
   },
 });
