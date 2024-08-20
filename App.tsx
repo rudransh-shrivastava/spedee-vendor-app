@@ -8,54 +8,43 @@ import {
   Button,
   Image,
   Modal,
-  SafeAreaView,
   ScrollView,
-  StatusBar,
   StyleSheet,
   Text,
   TouchableOpacity,
-  useColorScheme,
   View,
 } from 'react-native';
+import {Picker} from '@react-native-picker/picker';
+import {OrderStatus} from './Wordpress';
 
-import {
-  Colors,
-  DebugInstructions,
-  Header,
-  LearnMoreLinks,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
+interface BillingInfo {
+  first_name: string;
+  last_name: string;
+  address_1: string;
+  city: string;
+  state: string;
+  postcode: string;
+  country: string;
+}
 
-type SectionProps = PropsWithChildren<{
-  title: string;
-}>;
+interface Order {
+  line_items: any;
+  id: number;
+  billing: BillingInfo;
+  status: string;
+  total: string;
+}
 
 function App(): React.JSX.Element {
   const [isLoggedIn, setIsLoggedIn] = React.useState(false);
   const [orders, setOrders] = useState([]);
-  const [orderStatus, setOrderStatus] = useState({});
+  const [orderStatus, setOrderStatus] = useState<{[key: number]: OrderStatus}>(
+    {},
+  );
   const [isLoading, setIsLoading] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
-
-  interface BillingInfo {
-    first_name: string;
-    last_name: string;
-    address_1: string;
-    city: string;
-    state: string;
-    postcode: string;
-    country: string;
-  }
-
-  interface Order {
-    line_items: any;
-    id: number;
-    billing: BillingInfo;
-    status: string;
-    total: string;
-  }
-
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [newStatus, setNewStatus] = useState<OrderStatus | null>(null);
 
   useEffect(() => {
     const checkCredentials = async () => {
@@ -100,9 +89,7 @@ function App(): React.JSX.Element {
       }
     };
 
-    // loadOrders();
-
-    const intervalId = setInterval(updateOrders, 5000); // Fetch every 10 seconds
+    const intervalId = setInterval(updateOrders, 5000); // Fetch every 5 seconds
 
     return () => clearInterval(intervalId); // Cleanup on unmount
   }, [orders]);
@@ -124,21 +111,36 @@ function App(): React.JSX.Element {
     }
   };
 
-  const handleStatusChange = (orderId: any, status: any) => {
-    setOrderStatus(prevStatus => ({
-      ...prevStatus,
-      [orderId]: status,
-    }));
+  const handleStatusChange = async () => {
+    console.log('handle Status change');
+    const email = await AsyncStorage.getItem('vendorEmail');
+    const password = await AsyncStorage.getItem('vendorPassword');
+    if (email && password) {
+      console.log(selectedOrder?.id, newStatus);
+      if (selectedOrder && newStatus) {
+        try {
+          const wpConfig = {
+            url: 'https://spedee.com',
+            username: email,
+            password: password,
+          };
+          const wp = new WordPress(wpConfig);
+          await wp.updateOrderStatus(selectedOrder.id, newStatus);
+          closeModal();
+        } catch (error) {
+          console.error('Error updating order status:', error);
+        }
+      }
+    }
   };
 
   const handleLoginSuccess = () => {
     setIsLoggedIn(true);
   };
 
-  const handleSave = async (orderId: any) => {};
-
-  const openModal = (order: any) => {
+  const openModal = (order: Order) => {
     setSelectedOrder(order);
+    setNewStatus(orderStatus[order.id] || order.status);
     setModalVisible(true);
   };
 
@@ -212,9 +214,46 @@ function App(): React.JSX.Element {
                 style={
                   styles.modalValue
                 }>{`${selectedOrder.billing.address_1}, ${selectedOrder.billing.city}, ${selectedOrder.billing.state}, ${selectedOrder.billing.postcode}, ${selectedOrder.billing.country}`}</Text>
-              <Text style={styles.modalLabel}>Order Status:</Text>
-              <Text style={styles.modalValue}>{selectedOrder.status}</Text>
 
+              <Text style={styles.modalLabel}>Status:</Text>
+              <Text style={styles.modalValue}>{selectedOrder.status}</Text>
+              <View style={styles.statusRow}>
+                <Text>Change Status:</Text>
+                <Picker
+                  selectedValue={newStatus}
+                  style={styles.picker}
+                  onValueChange={itemValue =>
+                    setNewStatus(itemValue as OrderStatus)
+                  }>
+                  <Picker.Item
+                    label="Pending Payment"
+                    value={OrderStatus.PendingPayment}
+                  />
+                  <Picker.Item
+                    label="Processing"
+                    value={OrderStatus.Processing}
+                  />
+                  <Picker.Item label="On Hold" value={OrderStatus.OnHold} />
+                  <Picker.Item
+                    label="Completed"
+                    value={OrderStatus.Completed}
+                  />
+                  <Picker.Item
+                    label="Cancelled"
+                    value={OrderStatus.Cancelled}
+                  />
+                  <Picker.Item label="Failed" value={OrderStatus.Failed} />
+                  <Picker.Item label="Draft" value={OrderStatus.Draft} />
+                </Picker>
+              </View>
+              <TouchableOpacity
+                onPress={() => {
+                  console.log('pressed status change button');
+                  handleStatusChange();
+                }}
+                style={styles.button}>
+                <Text style={styles.buttonText}>Update Status</Text>
+              </TouchableOpacity>
               <Text style={styles.modalLabel}>Items:</Text>
               {selectedOrder.line_items.map((item: any) => (
                 <View key={item.id} style={styles.itemRow}>
@@ -247,6 +286,10 @@ function App(): React.JSX.Element {
 }
 
 const styles = StyleSheet.create({
+  picker: {
+    flex: 1,
+    height: 50,
+  },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -298,6 +341,21 @@ const styles = StyleSheet.create({
     width: 70,
     textAlign: 'center',
   },
+  statusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 10,
+  },
+  button: {
+    marginTop: 10,
+    padding: 10,
+    backgroundColor: '#007bff',
+    borderRadius: 5,
+  },
+  buttonText: {
+    color: 'white',
+    textAlign: 'center',
+  },
   modalContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -308,7 +366,7 @@ const styles = StyleSheet.create({
     width: '80%',
     maxWidth: 300,
     padding: 20,
-    backgroundColor: 'white',
+    backgroundColor: 'black',
     borderRadius: 10,
   },
   modalTitle: {
