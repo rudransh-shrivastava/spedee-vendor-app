@@ -1,6 +1,6 @@
 import axios from 'axios';
 import {Buffer} from 'buffer';
-export class WordPress {
+export default class WordPress {
   url: any;
   headers: {Authorization: string; 'Content-Type': string};
   constructor(wpConfig: any) {

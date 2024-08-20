@@ -1,7 +1,7 @@
 import React, {useState} from 'react';
 import {View, TextInput, Button, StyleSheet, Text} from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {WordPress} from '../lib/WordPress';
+import WordPress from '../Wordpress';
 
 const LoginForm = ({onLoginSuccess}: {onLoginSuccess: () => void}) => {
   const [email, setEmail] = useState('');
