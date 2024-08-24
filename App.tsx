@@ -2,9 +2,14 @@ import React, {useEffect, useState} from 'react';
 import type {PropsWithChildren} from 'react';
 import WordPress from './Wordpress';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import BackgroundFetch from 'react-native-background-fetch';
+import BackgroundTimer from 'react-native-background-timer';
+
 import LoginForm from './components/LoginForm';
 import {
   ActivityIndicator,
+  AppState,
+  AppStateStatus,
   Button,
   Image,
   Modal,
@@ -16,6 +21,7 @@ import {
 } from 'react-native';
 import {Picker} from '@react-native-picker/picker';
 import {OrderStatus} from './Wordpress';
+import LocalNotification from './Notification';
 
 interface BillingInfo {
   first_name: string;
@@ -45,6 +51,9 @@ function App(): React.JSX.Element {
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [newStatus, setNewStatus] = useState<OrderStatus | null>(null);
+  const [appState, setAppState] = useState<AppStateStatus>(
+    AppState.currentState,
+  );
 
   useEffect(() => {
     const checkCredentials = async () => {
@@ -111,6 +120,78 @@ function App(): React.JSX.Element {
     }
   };
 
+  useEffect(() => {
+    const handleAppStateChange = (nextAppState: AppStateStatus) => {
+      const email = AsyncStorage.getItem('vendorEmail');
+      const password = AsyncStorage.getItem('vendorPassword');
+      if (appState.match(/inactive|background/) && nextAppState === 'active') {
+        console.log('App has come to the foreground!');
+        // Fetch orders when the app comes to the foreground
+        fetchOrders(email, password); // Replace with actual email and password
+      } else if (nextAppState.match(/inactive|background/)) {
+        // Start background timer when the app goes to the background
+        console.log('App has gone to the background!');
+        BackgroundTimer.runBackgroundTimer(() => {
+          fetchOrders(email, password); // Replace with actual email and password
+        }, 60000); // Fetch orders every 60 seconds
+      } else if (nextAppState === 'active') {
+        // Stop background timer when the app comes to the foreground
+        BackgroundTimer.stopBackgroundTimer();
+      }
+      setAppState(nextAppState);
+    };
+
+    const subscription = AppState.addEventListener(
+      'change',
+      handleAppStateChange,
+    );
+
+    return () => {
+      subscription.remove();
+      BackgroundTimer.stopBackgroundTimer();
+    };
+  }, [appState]);
+
+  useEffect(() => {
+    const configureBackgroundFetch = async () => {
+      BackgroundFetch.configure(
+        {
+          minimumFetchInterval: 15, // Fetch interval in minutes
+          stopOnTerminate: false,
+          startOnBoot: true,
+        },
+        async taskId => {
+          console.log('[BackgroundFetch] taskId:', taskId);
+          const email = await AsyncStorage.getItem('vendorEmail');
+          const password = await AsyncStorage.getItem('vendorPassword');
+          await fetchOrders(email, password); // Replace with actual email and password
+          BackgroundFetch.finish(taskId);
+        },
+        error => {
+          console.error('[BackgroundFetch] failed to start:', error);
+        },
+      );
+
+      BackgroundFetch.status(status => {
+        switch (status) {
+          case BackgroundFetch.STATUS_RESTRICTED:
+            console.log('BackgroundFetch restricted');
+            break;
+          case BackgroundFetch.STATUS_DENIED:
+            console.log('BackgroundFetch denied');
+            break;
+          case BackgroundFetch.STATUS_AVAILABLE:
+            console.log('BackgroundFetch is enabled');
+            break;
+        }
+      });
+    };
+
+    if (isLoggedIn) {
+      configureBackgroundFetch();
+    }
+  }, [isLoggedIn]);
+
   const handleStatusChange = async () => {
     console.log('handle Status change');
     const email = await AsyncStorage.getItem('vendorEmail');
@@ -165,7 +246,12 @@ function App(): React.JSX.Element {
     <ScrollView>
       <View style={styles.titleContainer}>
         <Text style={styles.title}>Order Management</Text>
-        <Button title="LogOut" onPress={() => console.log('log out pressed')} />
+        <Button
+          title="LogOut"
+          onPress={() => {
+            LocalNotification('Hi', 'Hello');
+          }}
+        />
       </View>
       <View style={styles.stepContainer}>
         <View style={styles.tableHeader}>

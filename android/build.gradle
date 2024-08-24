@@ -6,16 +6,25 @@ buildscript {
         targetSdkVersion = 34
         ndkVersion = "26.1.10909125"
         kotlinVersion = "1.9.24"
+        androidxAppCompatVersion = "1.1.0"
+        androidxCoreVersion = "1.1.0"
     }
     repositories {
         google()
-        mavenCentral()
+        mavenCentral()  
     }
     dependencies {
         classpath("com.android.tools.build:gradle")
         classpath("com.facebook.react:react-native-gradle-plugin")
         classpath("org.jetbrains.kotlin:kotlin-gradle-plugin")
+        classpath("com.google.gms:google-services:4.4.2")
     }
 }
-
+allprojects {
+    repositories {
+         maven {
+            url("${project(':react-native-background-fetch').projectDir}/libs")
+        }
+    }
+}
 apply plugin: "com.facebook.react.rootproject"
