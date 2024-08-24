@@ -13,7 +13,7 @@ const LocalNotification = (title: string, message: string) => {
     (created: any) => console.log(`createChannel returned '${created}'`), // (optional) callback returns whether the channel was created, false means it already existed.
   );
   PushNotification.localNotification({
-    channelId: key, //this must be same with channelid in createchannel
+    channelId: key, //this must be same as channelid in createchannel
     title: title,
     message: message,
   });

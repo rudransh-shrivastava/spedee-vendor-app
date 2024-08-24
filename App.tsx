@@ -100,7 +100,7 @@ function App(): React.JSX.Element {
 
     const intervalId = setInterval(updateOrders, 5000); // Fetch every 5 seconds
 
-    return () => clearInterval(intervalId); // Cleanup on unmount
+    return () => clearInterval(intervalId);
   }, [orders]);
 
   const fetchOrders = async (email: any, password: any) => {
@@ -116,7 +116,7 @@ function App(): React.JSX.Element {
       return fetchedOrders;
     } catch (error) {
       console.error('Error fetching orders:', error);
-      throw error; // Re-throw the error if needed
+      throw error;
     }
   };
 
@@ -127,12 +127,13 @@ function App(): React.JSX.Element {
       if (appState.match(/inactive|background/) && nextAppState === 'active') {
         console.log('App has come to the foreground!');
         // Fetch orders when the app comes to the foreground
-        fetchOrders(email, password); // Replace with actual email and password
+        fetchOrders(email, password);
       } else if (nextAppState.match(/inactive|background/)) {
         // Start background timer when the app goes to the background
         console.log('App has gone to the background!');
         BackgroundTimer.runBackgroundTimer(() => {
-          fetchOrders(email, password); // Replace with actual email and password
+          console.log('background timer runs');
+          fetchOrders(email, password);
         }, 60000); // Fetch orders every 60 seconds
       } else if (nextAppState === 'active') {
         // Stop background timer when the app comes to the foreground
@@ -164,7 +165,7 @@ function App(): React.JSX.Element {
           console.log('[BackgroundFetch] taskId:', taskId);
           const email = await AsyncStorage.getItem('vendorEmail');
           const password = await AsyncStorage.getItem('vendorPassword');
-          await fetchOrders(email, password); // Replace with actual email and password
+          await fetchOrders(email, password);
           BackgroundFetch.finish(taskId);
         },
         error => {
